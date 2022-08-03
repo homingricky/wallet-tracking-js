@@ -1,7 +1,5 @@
-import { ethers } from "ethers";
-import XMLHttpRequest  from "xhr2";
-import { logInfo } from "./src/logging.js";
-import { wssProvider } from "./src/constants.js";
+import { logInfo, logSuccess, logError } from "./src/logging.js";
+import { web3, erc20abi } from "./src/constants.js";
 
 const main = async () => {
   
@@ -51,86 +49,47 @@ const main = async () => {
     "0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852" // Uniswap V2 USDT
   ];
   
-  whaleAddresses = whaleAddresses.map(
-    address => ethers.utils.hexZeroPad(address, 32)
-  );
+  const tokens = {};
+  const topics = ['Transfer(address,address,uint256)']
   
-  const topicSetsTxFrom = [
-    ethers.utils.id("Transfer(address,address,uint256)"),
-    whaleAddresses,
-    null
-  ];
+  // Generate inputs dict for log decoding
+  const inputsDict = erc20abi.reduce((acc, cur) => {
+    if (cur.type === 'event'){
+      const args = cur.inputs.map(input => input.type).join(",");
+      acc[web3.utils.sha3(`${cur.name}(${args})`)] = cur.inputs
+    }
+    return acc;
+  }, {});
   
-  const topicSetsTxTo = [
-    ethers.utils.id("Transfer(address,address,uint256)"),
-    null,
-    whaleAddresses
-  ];
-
-  const tokens = {}
-  
-  for (const topicSetsTx of [topicSetsTxFrom, topicSetsTxTo]) {
-    wssProvider.on(topicSetsTx, (log) => {
-      const address = log.address;
-      // console.log('tokenAbis:', tokenAbis);
-      if (!(address in tokens) || tokens[address] === "_loading") {
-        if (tokens[address] === "_loading" || Object.keys(tokens).length > 0) {
-          return
-        }
-        tokens[address] = "_loading";
-        let xhr = new XMLHttpRequest();
-        xhr.open('GET', `https://api.etherscan.io/api?module=contract&action=getabi&address=${address}`, true);
-        xhr.onload = () => {
-            const abi = JSON.parse(xhr.response).result;
-            if (abi === "Contract source code not verified") {
-              console.log(`ABI not available for ${address}`);
-              return;
-            }
-            
-            tokens[address] = {"abi": abi};
-            const tokenContract = new ethers.Contract(address, abi, wssProvider);
-            (async () => {
-              tokens[address]['name'] = await tokenContract.name();
-              tokens[address]['decimals'] = await tokenContract.decimals();
-              tokens[address]['symbol'] = await tokenContract.symbol();
-              const iface = new ethers.utils.Interface(abi);
-              try {
-                const parsedLog = iface.parseLog(log);
-                console.log("TxHash:", log.transactionHash);
-                console.log("address:", address);
-                console.log("from:", parsedLog["args"][0]);
-                console.log("to:", parsedLog["args"][1]);
-                console.log("symbol:", tokens[address]['symbol']);
-                console.log("amount:", parseInt(parsedLog["args"][2]["_hex"], 16) / 10 ** tokens[address]['decimals']);
-              } catch (error) {
-                console.log("exception:");
-                console.log(error);
-                console.log(abi);
-                console.log(log);
-              }
-            })();
+  var subscription = web3.eth.subscribe('logs', {
+    address: null,
+    topics: topics.map(topic => web3.utils.sha3(topic)) // "Transfer"
+  }).on("data", async (log) => {
+    const { address, data, topics, transactionHash } = log;
+    try {
+      if (!(address in tokens)) {
+        const tokenContract = new web3.eth.Contract(erc20abi, address);
+        tokens[address] = {
+          'decimals': await tokenContract.methods.decimals().call(),
+          'symbol': await tokenContract.methods.symbol().call()
         };
-        xhr.send()
-      } else {
-        const iface = new ethers.utils.Interface(tokens[address]['abi']);
-        try {
-          const parsedLog = iface.parseLog(log);
-          console.log("TxHash:", log.transactionHash);
-          console.log("address:", address);
-          console.log("from:", parsedLog["args"][0]);
-          console.log("to:", parsedLog["args"][1]);
-          console.log("symbol:", tokens[address]['symbol']);
-          console.log("amount:", parseInt(parsedLog["args"][2]["_hex"], 16) / 10 ** tokens[address]['decimals']);
-        } catch (error) {
-          console.log("exception:");
-          console.log(error);
-          console.log(tokens[address]);
-          console.log(log);
-        }
       }
-    })
-  }
- 
+      const decodedLog = web3.eth.abi.decodeLog(
+        inputsDict[topics[0]],
+        data,
+        topics.slice(1)
+      );
+      logSuccess("===========================================================================");
+      logSuccess("txHash:", transactionHash);
+      logSuccess("from:  ", decodedLog['from']);
+      logSuccess("to:    ", decodedLog['to']);
+      logSuccess("symbol:", tokens[address]['symbol']);
+      logSuccess("amount:", decodedLog["value"] /  10 ** tokens[address]['decimals']);
+    } catch (error) {
+      // non-ERC20 tokens transfers might result in invalid argument errors
+      // logError(`Log decode error: (txHash: ${transactionHash}, data: ${data})`) 
+    }
+  });
 };
 
 main();
