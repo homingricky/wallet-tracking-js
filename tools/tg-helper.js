@@ -5,10 +5,15 @@ dotenv.config()
 
 // Telegram Related Functions
 
-export const handle_msg = async function (decodedLog) {
+export const handle_msg = function (log, decodedLog) {
+    const msg = `
+        \ntime: ${Date().toLocaleString()}
+        \nfrom: ${decodedLog.from}
+        \nto: ${decodedLog.to}
+        \nvalue: ${decodedLog.value}`
 
+    return msg
 }
-
 
 export const alert_tg = async function (msg) {
     
@@ -29,4 +34,3 @@ export const alert_tg = async function (msg) {
     const json = await response.json();
 
 }
-

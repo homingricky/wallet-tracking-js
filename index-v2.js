@@ -1,9 +1,14 @@
 import dotenv from 'dotenv';
 import Web3 from 'web3';
+import fetch from 'node-fetch';
 import { erc20abi } from './src/constants.js';
-import { whaleAddresses } from './src/target_address.js';
+import { handle_msg, alert_tg } from './tools/tg-helper.js';
+import { getTargetMap } from './tools/gs-helper.js';
 
-const web3 = new Web3(process.env.RPC_URL_WSS)
+
+dotenv.config();
+
+const web3 = new Web3(process.env.RPC_URL_WSS);
 
 
 let abiMap = new Map()
@@ -17,16 +22,20 @@ for (const abi of erc20abi){
         abiMap.set(event_prototype_hash,abi.inputs)
     }
 }
-console.log(abiMap)
+// console.log(abiMap)
 
-const targetTopic = 'Transfer(address,address,uint256)'
+
 
 // whaleAddresses.map()
 
 console.log("Initializing topics for targets...")
 
+const targetMap = await getTargetMap();
+const whaleAddresses = Array.from(targetMap.values());
+
 let checksum_whaleAddress = [...whaleAddresses].map(address => web3.utils.toChecksumAddress(address))
 
+const targetTopic = 'Transfer(address,address,uint256)';
 const topics_for_all = [web3.utils.keccak256(targetTopic)]
 // const topics_from = [web3.utils.keccak256(targetTopic),[checksum_whaleAddress,null]]
 // const topics_to = [web3.utils.keccak256(targetTopic),[null,checksum_whaleAddress]]
@@ -40,7 +49,7 @@ for (const topics of [ topics_for_all]) {
         topics: topics
     };
 
-    // console.log(log_option);
+    // console.log(log_option);)
 
     const log_subscription = web3.eth.subscribe('logs', log_option, (err,res) => {
         if (err) console.error(err);
@@ -50,7 +59,12 @@ for (const topics of [ topics_for_all]) {
             // console.log(log)
             var decodedLog = web3.eth.abi.decodeLog(
                 abiMap.get(log.topics[0]), log.data, log.topics.slice(1));
-            
+
+            console.log(log);
+            console.log(decodedLog);
+            const alert_msg = handle_msg(log, decodedLog);
+            alert_tg(alert_msg);
+
             for (const address in checksum_whaleAddress){
                 check_arr = [decodedLog['from'], decodedLog['to']]
                 if (check_arr.includes(address)) {
@@ -62,23 +76,3 @@ for (const topics of [ topics_for_all]) {
     })
 
 }
-
-// const subscription = web3.eth.subscribe('logs', {
-//     address: null,
-//     topics: topics.map(topic => web3.utils.keccak256(topic)),
-// }).on('data', async(log) => {
-//     try {
-//         const { address, data, topics, transactionHash } = log;
-//         var decodedLog = web3.eth.abi.decodeLog(
-//             abiMap.get(topics[0]),
-//             data,
-//             topics.slice(1)
-//         );
-//         console.log(log);
-//         console.log(decodedLog);
-        
-
-//     } catch (error) {
-//         // console.log(error);
-//     }
-// })

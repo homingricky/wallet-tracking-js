@@ -2,8 +2,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import Web3 from 'web3';
-import { logError } from "./logging.js";
+import { logError } from "../tools/log-helper.js";
 
 let hasEnv = true;
 
@@ -23,12 +22,6 @@ if (!hasEnv) {
   process.exit(1);
 }
 
-// Providers
-export const web3 = new Web3(
-  new Web3.providers.WebsocketProvider(
-    process.env.RPC_URL_WSS
-  )
-);
 
 // erc20 ABI
 export const erc20abi = [
