@@ -69,6 +69,16 @@ for (const topics of [ topics_for_all]) {
                 check_arr = [decodedLog['from'], decodedLog['to']]
                 if (check_arr.includes(address)) {
                     console.log(decodedLog)
+
+                    // TODO list
+                    // get the value decimals (ERC-20)
+                    // map back the address to whale name
+                    // format the telegram message (remove space between lines, add etherscan link, )
+
+                    // push the telegram message into a list
+                    // remove the message when alert message is sent, sleep 0.5s to protect tg api
+                    // run a thread to check if there is item in list or not
+                    
                 }
             }
             
