@@ -1,5 +1,4 @@
 .DS_Store
-package.json
 .env
 node_modules
 *.json
