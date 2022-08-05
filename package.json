@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "dotenv": "^16.0.1",
+    "googleapis": "^105.0.0",
+    "node-fetch": "^3.2.10",
+    "web3": "^1.7.5"
+  }
+}
