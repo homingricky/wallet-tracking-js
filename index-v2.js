@@ -52,7 +52,6 @@ for (const topics of [ topics_for_all]) {
 
     // console.log(log_option);)
     let tokenMap = {};
-    let saved_token_address = [];
 
     const log_subscription = web3.eth.subscribe('logs', log_option, (err,res) => {
         if (err) console.error(err);
@@ -69,13 +68,11 @@ for (const topics of [ topics_for_all]) {
             }
             
             // console.log(decodedLog);
-            // const alert_msg = handle_msg(log, decodedLog);
-            // alert_tg(alert_msg);
             
+            
+            const token_address = log.address;
             try{
-                const token_address = log.address;
-                if (!(log.address in tokenMap)){
-                    saved_token_address.push(log.address);
+                if (!(token_address in tokenMap)){
                     const token_contract = new web3.eth.Contract(erc20abi, token_address);
                     tokenMap[token_address] = {
                         'decimals': await token_contract.methods.decimals().call(),
@@ -84,23 +81,29 @@ for (const topics of [ topics_for_all]) {
                 }
             } catch (err) {logDebug('This is not an ERC20 transactions');}
 
-            for (const address in checksum_whaleAddress){
-                const check_arr = [decodedLog['from'], decodedLog['to']]
-                if (check_arr.includes(address)) {
-                    console.log(decodedLog)
-                    
-                    // TODO list
+            const tokenInfo = tokenMap[token_address];
+            const alert_msg = handle_msg(log, decodedLog, tokenInfo);
+            alert_tg(alert_msg);
+            console.log(alert_msg)
 
-                    // get the value decimals (ERC-20)
-                    // map back the address to whale name
-                    // format the telegram message (remove space between lines, add etherscan link, )
 
-                    // push the telegram message into a list
-                    // remove the message when alert message is sent, sleep 0.5s to protect tg api
-                    // run a thread to check if there is item in list or not
+            // for (const address in checksum_whaleAddress){
+            //     const check_arr = [decodedLog['from'], decodedLog['to']]
+            //     if (check_arr.includes(address)) {
+            //         console.log(decodedLog)
                     
-                }
-            }
+            //         // TODO list
+
+            //         // get the value decimals (ERC-20) (done)
+            //         // map back the address to whale name 
+            //         // format the telegram message (remove space between lines, add etherscan link, )
+
+            //         // push the telegram message into a list
+            //         // remove the message when alert message is sent, sleep 0.5s to protect tg api
+            //         // run a thread to check if there is item in list or not
+                    
+            //     }
+            // }
             
         } catch (err) {console.log(err)}
     })

@@ -5,12 +5,12 @@ dotenv.config()
 
 // Telegram Related Functions
 
-export const handle_msg = function (log, decodedLog) {
+export const handle_msg = function (log, decodedLog, tokenInfo) {
     const msg = `
         \ntime: ${Date().toLocaleString()}
         \nfrom: ${decodedLog.from}
         \nto: ${decodedLog.to}
-        \nvalue: ${decodedLog.value}`
+        \nvalue: ${decodedLog.value * 10 ** (-tokenInfo.decimals)} ${tokenInfo.symbol}`
 
     return msg
 }
