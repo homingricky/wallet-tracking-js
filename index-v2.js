@@ -64,8 +64,8 @@ for (const topics of [ topics_for_all]) {
             var decodedLog = web3.eth.abi.decodeLog(
                 abiMap.get(log.topics[0]), log.data, log.topics.slice(1));
             } catch (err) {
-                logDebug('This is not a ERC20 transfer transaction');
-                
+                logDebug('This is not an ERC20 transfer transaction');
+                return
             }
             
             // console.log(decodedLog);
@@ -82,8 +82,6 @@ for (const topics of [ topics_for_all]) {
                         'symbol': await token_contract.methods.symbol().call(),
                     };
                 }
-
-            console.log(tokenMap[token_address].decimals);
             } catch (err) {logDebug('This is not an ERC20 transactions');}
 
             for (const address in checksum_whaleAddress){
