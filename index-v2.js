@@ -5,6 +5,7 @@ import { erc20abi } from './src/constants.js';
 import { handle_msg, alert_tg } from './tools/tg-helper.js';
 import { getTargetMap } from './tools/gs-helper.js';
 import { logDebug, logError } from './tools/log-helper.js';
+import { sleep } from './tools/utils.js';
 
 
 dotenv.config();
@@ -78,6 +79,7 @@ for (const topics of [ topics_for_all]) {
                         'decimals': await token_contract.methods.decimals().call(),
                         'symbol': await token_contract.methods.symbol().call(),
                     };
+                    sleep(1.5);
                 }
             } catch (err) {logDebug('This is not an ERC20 transactions');}
 
@@ -87,23 +89,23 @@ for (const topics of [ topics_for_all]) {
             console.log(alert_msg)
 
 
-            // for (const address in checksum_whaleAddress){
-            //     const check_arr = [decodedLog['from'], decodedLog['to']]
-            //     if (check_arr.includes(address)) {
-            //         console.log(decodedLog)
+            for (const address in checksum_whaleAddress){
+                const check_arr = [decodedLog['from'], decodedLog['to']]
+                if (check_arr.includes(address)) {
+                    console.log(decodedLog)
                     
-            //         // TODO list
+                    // TODO list
 
-            //         // get the value decimals (ERC-20) (done)
-            //         // map back the address to whale name 
-            //         // format the telegram message (remove space between lines, add etherscan link, )
+                    // get the value decimals (ERC-20) (done)
+                    // map back the address to whale name 
+                    // format the telegram message (remove space between lines, add etherscan link, )
 
-            //         // push the telegram message into a list
-            //         // remove the message when alert message is sent, sleep 0.5s to protect tg api
-            //         // run a thread to check if there is item in list or not
+                    // push the telegram message into a list
+                    // remove the message when alert message is sent, sleep 0.5s to protect tg api
+                    // run a thread to check if there is item in list or not
                     
-            //     }
-            // }
+                }
+            }
             
         } catch (err) {console.log(err)}
     })
