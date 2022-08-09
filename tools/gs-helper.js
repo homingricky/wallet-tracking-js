@@ -20,7 +20,7 @@ export const getTargetMap = async function (){
     });
     
     const target_arr = sheet.data.valueRanges[0].values;
-    const target_map = new Map();
+    let target_map = new Map();
     
     for (const target of target_arr){
         const target_name = target[0];
