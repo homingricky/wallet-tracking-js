@@ -32,10 +32,14 @@ for (const abi of erc20abi){
 
 console.log("Initializing topics for targets...")
 
-const targetMap = await getTargetMap();
+let targetMap = await getTargetMap();
 const whaleAddresses = Array.from(targetMap.values());
-
 let checksum_whaleAddress = [...whaleAddresses].map(address => web3.utils.toChecksumAddress(address))
+
+for (let target of targetMap){
+    targetMap.set(target[0],web3.utils.toChecksumAddress(target[1]));
+    console.log(target[1])
+}
 
 const targetTopic = 'Transfer(address,address,uint256)';
 const topics_for_all = [web3.utils.keccak256(targetTopic)]
@@ -59,50 +63,44 @@ for (const topics of [ topics_for_all]) {
     }).on('data', async(log) => {
         try {
 
-            console.log(log)
-            try {
-            var decodedLog = web3.eth.abi.decodeLog(
-                abiMap.get(log.topics[0]), log.data, log.topics.slice(1));
-            } catch (err) {
-                logDebug('This is not an ERC20 transfer transaction');
-                return
-            }
-            
-            // console.log(decodedLog);
-            
-            
-            const token_address = log.address;
-            try{
-                if (!(token_address in tokenMap)){
-                    const token_contract = new web3.eth.Contract(erc20abi, token_address);
-                    tokenMap[token_address] = {
-                        'decimals': await token_contract.methods.decimals().call(),
-                        'symbol': await token_contract.methods.symbol().call(),
-                    };
-                    sleep(1.5);
-                }
-            } catch (err) {logDebug('This is not an ERC20 transactions');}
-
-            const tokenInfo = tokenMap[token_address];
-            const alert_msg = handle_msg(log, decodedLog, tokenInfo);
-            alert_tg(alert_msg);
-            console.log(alert_msg)
-
-
             for (const address in checksum_whaleAddress){
-                const check_arr = [decodedLog['from'], decodedLog['to']]
+                const check_arr = [decodedLog['from'], decodedLog['to']];
                 if (check_arr.includes(address)) {
-                    console.log(decodedLog)
+
+                    const isSender = (address == decodedLog['from']);
+
+                    let whaleName = null;
+                    for (const target of targetMap){
+                        if (address == target[1]){
+                            whaleName = target[0];
+                        }
+                    }
+
+                    try {
+                        var decodedLog = web3.eth.abi.decodeLog(
+                            abiMap.get(log.topics[0]), log.data, log.topics.slice(1));
+                        } catch (err) {
+                            logDebug('This is not an ERC20 transfer transaction');
+                            return
+                        }
+                        
+                        const token_address = log.address;
+                        try{
+                            if (!(token_address in tokenMap)){
+                                const token_contract = new web3.eth.Contract(erc20abi, token_address);
+                                tokenMap[token_address] = {
+                                    'decimals': await token_contract.methods.decimals().call(),
+                                    'symbol': await token_contract.methods.symbol().call(),
+                                };
+                                sleep(1.5);
+                            }
+                        } catch (err) {logDebug('This is not an ERC20 transactions');}                    
+
+                        const tokenInfo = tokenMap[token_address];
+                        const alert_msg = handle_msg(log, decodedLog, tokenInfo, isSender, whaleName);
+                        alert_tg(alert_msg);
+                        console.log(alert_msg)
                     
-                    // TODO list
-
-                    // get the value decimals (ERC-20) (done)
-                    // map back the address to whale name 
-                    // format the telegram message (remove space between lines, add etherscan link, )
-
-                    // push the telegram message into a list
-                    // remove the message when alert message is sent, sleep 0.5s to protect tg api
-                    // run a thread to check if there is item in list or not
                     
                 }
             }
