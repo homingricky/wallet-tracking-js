@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import Web3 from 'web3';
 import fetch from 'node-fetch';
 import { erc20abi } from './src/constants.js';
-import { handle_msg, alert_tg } from './tools/tg-helper.js';
+import { handle_msg, debug_msg, alert_tg } from './tools/tg-helper.js';
 import { getTargetMap } from './tools/gs-helper.js';
 import { logDebug, logError, logInfo } from './tools/log-helper.js';
 import { sleep } from './tools/utils.js';
@@ -77,6 +77,10 @@ for (const topics of [ topics_for_all]) {
                 }
                 } catch (err) {logDebug('This is not an ERC20 transactions');} 
 
+            const tokenInfo = tokenMap[token_address];
+            const msg = debug_msg(log, decodedLog, tokenInfo);
+            console.log(msg)
+
             for (const address in checksum_whaleAddress){
                 const check_arr = [decodedLog['from'], decodedLog['to']];
                 if (check_arr.includes(address)) {
@@ -90,7 +94,6 @@ for (const topics of [ topics_for_all]) {
                         }
                     }
 
-                    const tokenInfo = tokenMap[token_address];
                     const alert_msg = handle_msg(log, decodedLog, tokenInfo, isSender, whaleName);
                     alert_tg(alert_msg);
                     logInfo(alert_msg);

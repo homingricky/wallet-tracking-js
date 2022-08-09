@@ -20,6 +20,19 @@ export const handle_msg = function (log, decodedLog, tokenInfo, isSender, whaleN
     return msg
 }
 
+export const debug_msg = function (log, decodedLog, tokenInfo) {
+
+    let current_hkt = addHours(8);
+    current_hkt = dateFormat(current_hkt, "isoDateTime");
+    const processed_value = round(decodedLog.value * 10 ** (-tokenInfo.decimals),2)
+    
+    const msg = `
+        \nTime: ${current_hkt} HKT \nSender: ${decodedLog.from} \nReceiver: ${decodedLog.to} \nValue: ${processed_value} ${tokenInfo.symbol} 
+        \nhttps://etherscan.io/tx/${log.transactionHash}`;
+
+    return msg
+}
+
 export const alert_tg = async function (msg) {
     
     const data = {
