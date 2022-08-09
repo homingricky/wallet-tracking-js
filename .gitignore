@@ -1,4 +1,6 @@
 .DS_Store
 .env
 node_modules
+cronscripts
 wallet-tracking-bot-fc86d2a4e0ed.json
+wallet-tracking-bot-843ae14365f3.json
