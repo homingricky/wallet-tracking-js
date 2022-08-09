@@ -61,7 +61,7 @@ for (const topics of [ topics_for_all]) {
                 var decodedLog = web3.eth.abi.decodeLog(
                     abiMap.get(log.topics[0]), log.data, log.topics.slice(1));
                 } catch (err) {
-                    logDebug('This is not an ERC20 transfer transaction');
+                    /*logDebug('This is not an ERC20 transfer transaction');*/
                     return
                 }
 
@@ -75,11 +75,11 @@ for (const topics of [ topics_for_all]) {
                     };
                     sleep(1.5);
                 }
-                } catch (err) {logDebug('This is not an ERC20 transactions');} 
+                } catch (err) {/*logDebug('This is not an ERC20 transactions');*/} 
 
             const tokenInfo = tokenMap[token_address];
-            const msg = debug_msg(log, decodedLog, tokenInfo);
-            console.log(msg)
+            // const msg = debug_msg(log, decodedLog, tokenInfo);
+            // console.log(msg)
 
             for (const address in checksum_whaleAddress){
                 const check_arr = [decodedLog['from'], decodedLog['to']];
@@ -97,7 +97,7 @@ for (const topics of [ topics_for_all]) {
                     const alert_msg = handle_msg(log, decodedLog, tokenInfo, isSender, whaleName);
                     alert_tg(alert_msg);
                     logInfo(alert_msg);
-                    
+                    break;
                 }
             }
             
