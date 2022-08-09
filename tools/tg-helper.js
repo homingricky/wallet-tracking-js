@@ -7,14 +7,14 @@ dotenv.config()
 
 // Telegram Related Functions
 
-export const handle_msg = function (log, decodedLog, tokenInfo) {
+export const handle_msg = function (log, decodedLog, tokenInfo, isSender, whaleName) {
 
     let current_hkt = addHours(8);
     current_hkt = dateFormat(current_hkt, "isoDateTime");
     const processed_value = round(decodedLog.value * 10 ** (-tokenInfo.decimals),2)
-
+    
     const msg = `
-        \nTime: ${current_hkt} HKT \nSender: ${decodedLog.from} \nReceiver: ${decodedLog.to} \nValue: ${processed_value} ${tokenInfo.symbol} 
+        \nTime: ${current_hkt} HKT \nSender: ${(isSender? whaleName: decodedLog.from)} \nReceiver: ${(isSender? decodedLog.to: whaleName)} \nValue: ${processed_value} ${tokenInfo.symbol} 
         \nhttps://etherscan.io/tx/${log.transactionHash}`;
 
     return msg
