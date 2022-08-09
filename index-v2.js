@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import { erc20abi } from './src/constants.js';
 import { handle_msg, alert_tg } from './tools/tg-helper.js';
 import { getTargetMap } from './tools/gs-helper.js';
+import { logDebug, logError } from './tools/log-helper.js';
 
 
 dotenv.config();
@@ -50,27 +51,48 @@ for (const topics of [ topics_for_all]) {
     };
 
     // console.log(log_option);)
+    let tokenMap = {};
+    let saved_token_address = [];
 
     const log_subscription = web3.eth.subscribe('logs', log_option, (err,res) => {
         if (err) console.error(err);
     }).on('data', async(log) => {
         try {
 
-            // console.log(log)
+            console.log(log)
+            try {
             var decodedLog = web3.eth.abi.decodeLog(
                 abiMap.get(log.topics[0]), log.data, log.topics.slice(1));
+            } catch (err) {
+                logDebug('This is not a ERC20 transfer transaction');
+                
+            }
+            
+            // console.log(decodedLog);
+            // const alert_msg = handle_msg(log, decodedLog);
+            // alert_tg(alert_msg);
+            
+            try{
+                const token_address = log.address;
+                if (!(log.address in tokenMap)){
+                    saved_token_address.push(log.address);
+                    const token_contract = new web3.eth.Contract(erc20abi, token_address);
+                    tokenMap[token_address] = {
+                        'decimals': await token_contract.methods.decimals().call(),
+                        'symbol': await token_contract.methods.symbol().call(),
+                    };
+                }
 
-            console.log(log);
-            console.log(decodedLog);
-            const alert_msg = handle_msg(log, decodedLog);
-            alert_tg(alert_msg);
+            console.log(tokenMap[token_address].decimals);
+            } catch (err) {logDebug('This is not an ERC20 transactions');}
 
             for (const address in checksum_whaleAddress){
-                check_arr = [decodedLog['from'], decodedLog['to']]
+                const check_arr = [decodedLog['from'], decodedLog['to']]
                 if (check_arr.includes(address)) {
                     console.log(decodedLog)
-
+                    
                     // TODO list
+
                     // get the value decimals (ERC-20)
                     // map back the address to whale name
                     // format the telegram message (remove space between lines, add etherscan link, )
@@ -82,7 +104,7 @@ for (const topics of [ topics_for_all]) {
                 }
             }
             
-        } catch (err) {}
+        } catch (err) {console.log(err)}
     })
 
 }
