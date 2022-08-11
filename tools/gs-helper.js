@@ -1,7 +1,10 @@
 import { google } from 'googleapis';
+import Web3 from 'web3';
 import dotenv from 'dotenv';
 
-dotenv.config()
+dotenv.config();
+const web3 = new Web3(process.env.RPC_URL);
+
 export const getTargetMap = async function (){
     
     const auth = new google.auth.GoogleAuth({
@@ -28,9 +31,10 @@ export const getTargetMap = async function (){
         
         if (!target_address) continue 
         else{
-            target_map.set(target_name,target_address)
+            target_map.set(web3.utils.toChecksumAddress(target_address), target_name);
         }
     }
+
 
     return target_map
 }

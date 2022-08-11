@@ -2,19 +2,23 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import dateFormat from 'dateformat';
 import { addHours, round } from './utils.js';
+import { getTargetMap } from './gs-helper.js';
 
 dotenv.config()
 
+export const targetMap = await getTargetMap();
+export const checksum_whaleAddress = Array.from(targetMap.keys());
+
 // Telegram Related Functions
 
-export const handle_msg = function (log, decodedLog, tokenInfo, isSender, whaleName) {
+export const handle_msg = function (log, decodedLog, tokenInfo) {
 
     let current_hkt = addHours(8);
     current_hkt = dateFormat(current_hkt, "isoDateTime");
     const processed_value = round(decodedLog.value * 10 ** (-tokenInfo.decimals),2)
     
     const msg = `
-        \nTime: ${current_hkt} HKT \nSender: ${(isSender? whaleName: decodedLog.from)} \nReceiver: ${(isSender? decodedLog.to: whaleName)} \nValue: ${processed_value} ${tokenInfo.symbol} 
+        \nTime: ${current_hkt} HKT \nSender: ${(targetMap[decodedLog.from] || decodedLog.from)} \nReceiver: ${(targetMap[decodedLog.to] || decodedLog.to)} \nValue: ${processed_value} ${tokenInfo.symbol} 
         \nhttps://etherscan.io/tx/${log.transactionHash}`;
 
     return msg
