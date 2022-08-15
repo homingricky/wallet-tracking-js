@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import Web3 from 'web3';
 import { erc20abi } from './src/constants.js';
 import { checksum_whaleAddress, handle_msg, debug_msg, alert_tg } from './tools/tg-helper.js';
-import { logDebug, logError, logInfo } from './tools/log-helper.js';
+import { logInfo, logSuccess } from './tools/log-helper.js';
 
 dotenv.config();
 
@@ -20,7 +20,6 @@ for (const abi of erc20abi){
 }
 
 logInfo("Initializing topics for targets...")
-
 let tokenMap = {};
 
 const targetTopic = 'Transfer(address,address,uint256)';
@@ -68,14 +67,11 @@ for (const topics of [topics_for_all]) {
             } catch (err) {/*logDebug('This is not an ERC20 transaction');*/} 
 
         const tokenInfo = tokenMap[token_address];
-
-        for (const address in checksum_whaleAddress){
-            const check_arr = [decodedLog['from'], decodedLog['to']];
-            if (check_arr.includes(address)) {
-
+        for (const address of checksum_whaleAddress){
+            if (decodedLog.from === address || decodedLog.to === address){
                 const alert_msg = handle_msg(log, decodedLog, tokenInfo);
                 alert_tg(alert_msg);
-                logInfo(alert_msg);
+                logSuccess(alert_msg);
                 break;
             }
         }
